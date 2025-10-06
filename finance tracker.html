@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Finance Tracker and Budget Planner</title>
+    <style>
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: white;
+            background-color: #28a745;
+            padding: 20px 0;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 20px;
+        }
+        .tracker-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .tracker-column {
+            flex: 1;
+            margin: 0 10px;
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .footer {
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            margin-top: 20px;
+            border-radius: 0 0 8px 8px;
+        }
+        .login-page {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page -->
+    <div class="login-page" id="loginPage">
+        <h1>Login</h1>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Enter your name" required><br>
+            <input type="password" id="password" placeholder="Enter password" required><br>
+            <button type="submit">Login</button>
+            <p id="loginError" style="color:red;"></p>
+        </form>
+    </div>
+
+    <!-- Finance Tracker Page -->
+    <div class="container" id="financeTracker" style="display:none;">
+        <h1>Personal Finance Tracker and Budget Planner</h1>
+
+        <!-- Description Section -->
+        <p><strong>Track Your Finances</strong></p>
+        <p>Enter your income, multiple expenses, and see how much budget you have left.</p>
+
+        <!-- Tracker Section with 3 Columns -->
+        <div class="tracker-section">
+            
+            <!-- Income Column -->
+            <div class="tracker-column">
+                <h2>Income</h2>
+                <form id="incomeForm">
+                    <input type="number" id="income" placeholder="Enter your income" required>
+                    <button type="submit">Add Income</button>
+                </form>
+            </div>
+
+            <!-- Expenses Column -->
+            <div class="tracker-column">
+                <h2>Expenses</h2>
+                <form id="expenseForm">
+                    <input type="text" id="expenseDesc" placeholder="Expense description" required>
+                    <input type="number" id="expenseAmount" placeholder="Expense amount" required>
+                    <button type="submit">Add Another Expense</button>
+                </form>
+            </div>
+
+            <!-- Budget Overview Column -->
+            <div class="tracker-column">
+                <h2>Budget Overview</h2>
+                <p><strong>Remaining Budget:</strong> ₹<span id="remainingBudget">0</span></p>
+                <button id="calculateBtn">Calculate Remaining Budget</button>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <div class="history">
+            <h2>Transaction History</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Description</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionHistory"></tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            © 2024 Personal Finance Tracker
+        </div>
+    </div>
+
+    <script>
+        // Simple login check
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (password === '1234567') {
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('financeTracker').style.display = 'block';
+            } else {
+                document.getElementById('loginError').textContent = 'Incorrect password. Please try again.';
+            }
+        });
+
+        // Finance Tracker Logic
+        let totalIncome = 0;
+        let remainingBudget = 0;
+        let transactions = [];
+
+        // Add Income
+        document.getElementById('incomeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const income = parseFloat(document.getElementById('income').value);
+            if (income > 0) {
+                totalIncome += income;
+                remainingBudget += income;
+                updateRemainingBudget();
+                addTransaction('Income', income);
+            }
+            document.getElementById('incomeForm').reset();
+        });
+
+        // Add Expense
+        document.getElementById('expenseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const description = document.getElementById('expenseDesc').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            if (amount > 0 && description) {
+                remainingBudget -= amount;
+                updateRemainingBudget();
+                addTransaction(description, -amount);
+            }
+            document.getElementById('expenseForm').reset();
+        });
+
+        // Update Remaining Budget Display
+        function updateRemainingBudget() {
+            document.getElementById('remainingBudget').textContent = remainingBudget.toFixed(2);
+        }
+
+        // Add Transaction to History
+        function addTransaction(description, amount) {
+            const date = new Date().toLocaleString();
+            const transaction = {
+                date,
+                description,
+                amount
+            };
+            transactions.push(transaction);
+            updateTransactionHistory();
+        }
+
+        // Update Transaction History Table
+        function updateTransactionHistory() {
+            const history = document.getElementById('transactionHistory');
+            history.innerHTML = ''; // Clear the table
+            transactions.forEach(transaction => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${transaction.date}</td>
+                    <td>${transaction.description}</td>
+                    <td>₹${transaction.amount.toFixed(2)}</td>
+                `;
+                history.appendChild(row);
+            });
+        }
+    </script>
+
+</body>
+</html>
